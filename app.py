@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template_string, request, jsonify
 from flask_cors import CORS
 import sqlite3
 import json
@@ -70,16 +70,38 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-# Rotas da API
+# Ler os arquivos HTML
+def ler_html(arquivo):
+    caminho = os.path.join('static', arquivo)
+    if os.path.exists(caminho):
+        with open(caminho, 'r', encoding='utf-8') as f:
+            return f.read()
+    return None
+
+# Rotas
 @app.route('/')
 def index():
     """Página pública"""
-    return send_from_directory('static', 'index.html')
+    html = ler_html('index.html')
+    if html:
+        return render_template_string(html)
+    return '''
+    <h1>Rifa Online</h1>
+    <p>Sistema funcionando! Mas arquivos HTML não encontrados.</p>
+    <p>Verifique se a pasta 'static' foi enviada para o GitHub com os arquivos:</p>
+    <ul>
+        <li>index.html</li>
+        <li>admin.html</li>
+    </ul>
+    '''
 
 @app.route('/admin')
 def admin():
     """Painel administrativo"""
-    return send_from_directory('static', 'admin.html')
+    html = ler_html('admin.html')
+    if html:
+        return render_template_string(html)
+    return '<h1>Admin</h1><p>Arquivo admin.html não encontrado na pasta static/</p>'
 
 @app.route('/api/numeros', methods=['GET'])
 def get_numeros():
@@ -229,13 +251,12 @@ def reset_rifa():
     
     return jsonify({'sucesso': True})
 
+@app.route('/health')
+def health():
+    """Health check"""
+    return jsonify({'status': 'ok', 'message': 'Sistema funcionando!'})
+
 if __name__ == '__main__':
     init_db()
-    print('=' * 50)
-    print('🎲 SERVIDOR DE RIFA INICIADO! 🎲')
-    print('=' * 50)
-    print('📱 Página Pública: http://localhost:5000')
-    print('🔐 Painel Admin: http://localhost:5000/admin')
-    print(f'🔑 Senha Admin: {SENHA_ADMIN}')
-    print('=' * 50)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
