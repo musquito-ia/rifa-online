@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - Rifa 🔐</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .numero-disponivel { 
+            background: #f0fdf4; 
+            border: 2px solid #86efac;
+        }
+        .numero-vendido { 
+            background: #fef3c7; 
+            border: 2px solid #fbbf24;
+            cursor: pointer;
+        }
+        .numero-vendido:hover {
+            background: #fde68a;
+            transform: scale(1.05);
+        }
+        .numero-pago { 
+            background: #dcfce7; 
+            border: 2px solid #22c55e;
+            cursor: pointer;
+        }
+        .numero-pago:hover {
+            background: #bbf7d0;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen">
+    <!-- Tela de Login -->
+    <div id="telaLogin" class="min-h-screen flex items-center justify-center px-4">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
+            <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">🔐 Painel Admin</h1>
+            <p class="text-center text-gray-600 mb-6">Digite a senha para acessar</p>
+            
+            <input 
+                type="password" 
+                id="inputSenha" 
+                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none mb-4"
+                placeholder="Senha..."
+            >
+            
+            <button onclick="fazerLogin()" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 font-bold">
+                🔓 Entrar
+            </button>
+        </div>
+    </div>
+
+    <!-- Painel Principal -->
+    <div id="painelPrincipal" class="hidden container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 mb-8 text-white">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2">🔐 Painel Administrativo</h1>
+                    <p class="text-lg">Gerencie os pagamentos da rifa</p>
+                </div>
+                <button onclick="sair()" class="bg-white text-indigo-600 px-6 py-2 rounded-lg hover:bg-gray-100 font-bold">
+                    🚪 Sair
+                </button>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="grid md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-3xl font-bold text-green-600" id="disponiveis">0</div>
+                <div class="text-sm text-gray-600">🟢 Disponíveis</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-3xl font-bold text-yellow-600" id="vendidos">0</div>
+                <div class="text-sm text-gray-600">🟡 Aguardando Pagamento</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-3xl font-bold text-green-600" id="pagos">0</div>
+                <div class="text-sm text-gray-600">✅ Pagos Confirmados</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-2xl font-bold text-green-600" id="total">R$ 0,00</div>
+                <div class="text-sm text-gray-600">💰 Total Arrecadado</div>
+            </div>
+        </div>
+
+        <!-- Ações Rápidas -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">⚡ Ações Rápidas</h3>
+            <div class="flex flex-wrap gap-3">
+                <button onclick="filtrarTodos()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300" id="btnTodos">
+                    Todos (100)
+                </button>
+                <button onclick="filtrarDisponiveis()" class="px-4 py-2 bg-green-100 rounded-lg hover:bg-green-200" id="btnDisponiveis">
+                    🟢 Disponíveis
+                </button>
+                <button onclick="filtrarVendidos()" class="px-4 py-2 bg-yellow-100 rounded-lg hover:bg-yellow-200" id="btnVendidos">
+                    🟡 Aguardando Pagamento
+                </button>
+                <button onclick="filtrarPagos()" class="px-4 py-2 bg-green-100 rounded-lg hover:bg-green-200" id="btnPagos">
+                    ✅ Pagos
+                </button>
+                <button onclick="copiarLista()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    📱 Copiar Lista
+                </button>
+                <button onclick="resetarRifa()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    🗑️ Resetar Tudo
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista de Números -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">📋 Lista de Números</h3>
+            <p class="text-gray-600 mb-6">Clique em um número para marcar/desmarcar como pago</p>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3" id="numerosGrid">
+                <!-- Será preenchido pelo JavaScript -->
+            </div>
+        </div>
+
+        <!-- Tabela Detalhada -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">📊 Detalhes dos Números Vendidos</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b-2 border-gray-300">
+                            <th class="py-3 px-4">Número</th>
+                            <th class="py-3 px-4">Nome</th>
+                            <th class="py-3 px-4">Telefone</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4">Data Reserva</th>
+                            <th class="py-3 px-4">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaNumeros">
+                        <!-- Será preenchido -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição -->
+    <div id="modalEdicao" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Gerenciar Número <span id="modalNumero"></span></h3>
+            
+            <div class="mb-4">
+                <p><strong>Nome:</strong> <span id="modalNome"></span></p>
+                <p><strong>Telefone:</strong> <span id="modalTelefone"></span></p>
+            </div>
+
+            <div class="flex gap-3 mb-4">
+                <button onclick="marcarPago()" class="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 font-bold">
+                    ✅ Marcar como PAGO
+                </button>
+                <button onclick="marcarNaoPago()" class="flex-1 bg-yellow-500 text-white py-3 rounded-lg hover:bg-yellow-600 font-bold">
+                    🟡 Desmarcar PAGO
+                </button>
+            </div>
+
+            <button onclick="removerReserva()" class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 font-bold mb-3">
+                🗑️ Remover Reserva
+            </button>
+
+            <button onclick="fecharModal()" class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 font-bold">
+                ❌ Cancelar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '';
+        let senha = null;
+        let numeros = [];
+        let numeroEditando = null;
+
+        async function fazerLogin() {
+            const inputSenha = document.getElementById('inputSenha').value;
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senha: inputSenha })
+                });
+
+                if (response.ok) {
+                    senha = inputSenha;
+                    document.getElementById('telaLogin').classList.add('hidden');
+                    document.getElementById('painelPrincipal').classList.remove('hidden');
+                    carregarNumeros();
+                } else {
+                    alert('❌ Senha incorreta!');
+                }
+            } catch (error) {
+                alert('Erro ao fazer login');
+            }
+        }
+
+        function sair() {
+            senha = null;
+            document.getElementById('telaLogin').classList.remove('hidden');
+            document.getElementById('painelPrincipal').classList.add('hidden');
+            document.getElementById('inputSenha').value = '';
+        }
+
+        async function carregarNumeros() {
+            try {
+                const response = await fetch(`${API_URL}/api/numeros`);
+                numeros = await response.json();
+                renderizarNumeros();
+                renderizarTabela();
+                atualizarEstatisticas();
+            } catch (error) {
+                console.error('Erro:', error);
+            }
+        }
+
+        function renderizarNumeros() {
+            const grid = document.getElementById('numerosGrid');
+            grid.innerHTML = '';
+
+            numeros.forEach(data => {
+                const div = document.createElement('div');
+                const classe = data.pago ? 'numero-pago' : 
+                              data.nome ? 'numero-vendido' : 
+                              'numero-disponivel';
+                
+                div.className = `${classe} p-4 rounded-lg transition-all`;
+                
+                div.innerHTML = `
+                    <div class="text-3xl text-center mb-1">${data.animal}</div>
+                    <div class="text-lg font-bold text-center mb-1">
+                        ${String(data.numero).padStart(2, '0')}
+                    </div>
+                    <div class="text-xs text-center truncate">
+                        ${data.nome || 'Disponível'}
+                    </div>
+                    ${data.pago ? '<div class="text-center text-green-600 font-bold mt-1">✅</div>' : ''}
+                `;
+                
+                if (data.nome) {
+                    div.onclick = () => abrirModal(data);
+                }
+                
+                grid.appendChild(div);
+            });
+        }
+
+        function renderizarTabela() {
+            const tbody = document.getElementById('tabelaNumeros');
+            tbody.innerHTML = '';
+
+            const vendidos = numeros.filter(n => n.nome);
+
+            if (vendidos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Nenhum número vendido ainda</td></tr>';
+                return;
+            }
+
+            vendidos.forEach(data => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-200 hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-bold">${data.animal} ${String(data.numero).padStart(2, '0')}</td>
+                    <td class="py-3 px-4">${data.nome}</td>
+                    <td class="py-3 px-4">${data.telefone}</td>
+                    <td class="py-3 px-4">
+                        ${data.pago ? 
+                            '<span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-bold">✅ PAGO</span>' : 
+                            '<span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">🟡 PENDENTE</span>'
+                        }
+                    </td>
+                    <td class="py-3 px-4 text-sm text-gray-600">
+                        ${data.data_reserva ? new Date(data.data_reserva).toLocaleString('pt-BR') : '-'}
+                    </td>
+                    <td class="py-3 px-4">
+                        <button onclick='abrirModalJSON(${JSON.stringify(data).replace(/'/g, "&apos;")})' 
+                                class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm">
+                            Editar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function atualizarEstatisticas() {
+            const disponiveis = numeros.filter(n => !n.nome).length;
+            const vendidos = numeros.filter(n => n.nome && !n.pago).length;
+            const pagos = numeros.filter(n => n.pago).length;
+            const total = pagos * 100;
+
+            document.getElementById('disponiveis').textContent = disponiveis;
+            document.getElementById('vendidos').textContent = vendidos;
+            document.getElementById('pagos').textContent = pagos;
+            document.getElementById('total').textContent = `R$ ${total.toFixed(2)}`;
+
+            document.getElementById('btnTodos').textContent = `Todos (${numeros.length})`;
+            document.getElementById('btnDisponiveis').textContent = `🟢 Disponíveis (${disponiveis})`;
+            document.getElementById('btnVendidos').textContent = `🟡 Aguardando (${vendidos})`;
+            document.getElementById('btnPagos').textContent = `✅ Pagos (${pagos})`;
+        }
+
+        function abrirModal(data) {
+            numeroEditando = data.numero;
+            document.getElementById('modalNumero').textContent = String(data.numero).padStart(2, '0');
+            document.getElementById('modalNome').textContent = data.nome;
+            document.getElementById('modalTelefone').textContent = data.telefone;
+            document.getElementById('modalEdicao').classList.remove('hidden');
+        }
+
+        function abrirModalJSON(data) {
+            abrirModal(data);
+        }
+
+        function fecharModal() {
+            document.getElementById('modalEdicao').classList.add('hidden');
+        }
+
+        async function marcarPago() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/marcar-pago`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numero: numeroEditando, pago: 1, senha })
+                });
+
+                if (response.ok) {
+                    await carregarNumeros();
+                    fecharModal();
+                } else {
+                    alert('Erro ao marcar como pago');
+                }
+            } catch (error) {
+                alert('Erro ao marcar como pago');
+            }
+        }
+
+        async function marcarNaoPago() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/marcar-pago`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numero: numeroEditando, pago: 0, senha })
+                });
+
+                if (response.ok) {
+                    await carregarNumeros();
+                    fecharModal();
+                } else {
+                    alert('Erro ao desmarcar pagamento');
+                }
+            } catch (error) {
+                alert('Erro ao desmarcar pagamento');
+            }
+        }
+
+        async function removerReserva() {
+            if (!confirm('Tem certeza que deseja remover esta reserva?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/remover`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numero: numeroEditando, senha })
+                });
+
+                if (response.ok) {
+                    await carregarNumeros();
+                    fecharModal();
+                } else {
+                    alert('Erro ao remover reserva');
+                }
+            } catch (error) {
+                alert('Erro ao remover reserva');
+            }
+        }
+
+        async function resetarRifa() {
+            if (!confirm('⚠️ ATENÇÃO! Isso vai remover TODOS os dados. Tem certeza?')) return;
+            if (!confirm('Tem CERTEZA ABSOLUTA? Esta ação não pode ser desfeita!')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/reset`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senha })
+                });
+
+                if (response.ok) {
+                    alert('✅ Rifa resetada com sucesso!');
+                    await carregarNumeros();
+                } else {
+                    alert('Erro ao resetar');
+                }
+            } catch (error) {
+                alert('Erro ao resetar');
+            }
+        }
+
+        function filtrarTodos() {
+            document.querySelectorAll('#numerosGrid > div').forEach(div => {
+                div.style.display = 'block';
+            });
+        }
+
+        function filtrarDisponiveis() {
+            document.querySelectorAll('#numerosGrid > div').forEach((div, index) => {
+                const data = numeros[index];
+                div.style.display = !data.nome ? 'block' : 'none';
+            });
+        }
+
+        function filtrarVendidos() {
+            document.querySelectorAll('#numerosGrid > div').forEach((div, index) => {
+                const data = numeros[index];
+                div.style.display = data.nome && !data.pago ? 'block' : 'none';
+            });
+        }
+
+        function filtrarPagos() {
+            document.querySelectorAll('#numerosGrid > div').forEach((div, index) => {
+                const data = numeros[index];
+                div.style.display = data.pago ? 'block' : 'none';
+            });
+        }
+
+        function copiarLista() {
+            let texto = '🎲 *RIFA - TV SMART 50 POLEGADAS* 📺\n\n';
+            texto += '💰 *Valor da dezena:* R$ 100,00\n\n';
+
+            numeros.forEach(data => {
+                const numFormatado = String(data.numero).padStart(2, '0');
+                texto += `${data.animal}${numFormatado} ${data.nome || ''}${data.pago ? ' ✅' : ''}\n`;
+            });
+
+            navigator.clipboard.writeText(texto);
+            alert('✅ Lista copiada!');
+        }
+
+        // Enter para fazer login
+        document.getElementById('inputSenha').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fazerLogin();
+        });
+
+        // Atualizar a cada 10 segundos
+        setInterval(() => {
+            if (senha) carregarNumeros();
+        }, 10000);
+    </script>
+</body>
+</html>
